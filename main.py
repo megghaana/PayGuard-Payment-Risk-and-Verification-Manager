@@ -51,6 +51,7 @@ def get_payment_id(payload: dict[str, Any]) -> str | None:
     return payment_id if isinstance(payment_id, str) else None
 
 
+@app.post("/api/webhook", include_in_schema=False)
 @app.post("/webhook")
 async def razorpay_webhook(request: Request) -> JSONResponse:
     logger.info("Webhook received")
