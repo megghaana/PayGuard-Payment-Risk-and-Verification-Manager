@@ -7,3 +7,4 @@ shap
 langgraph
 groq
 python-dotenv
+razorpay
