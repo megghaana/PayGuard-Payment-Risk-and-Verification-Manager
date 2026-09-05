@@ -1,16 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "rewrites": [
-    {
-      "source": "/webhook",
-      "destination": "/api/webhook"
-    }
-  ],
   "functions": {
     "api/index.py": {
-      "excludeFiles": "{__pycache__/**,**/*.pyc,*.csv,*.md,generate_*.py,train_*.py,test_*.py}"
-    },
-    "api/webhook.py": {
       "excludeFiles": "{__pycache__/**,**/*.pyc,*.csv,*.md,generate_*.py,train_*.py,test_*.py}"
     }
   }
