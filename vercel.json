@@ -7,7 +7,10 @@
     }
   ],
   "functions": {
-    "main.py": {
+    "api/index.py": {
+      "excludeFiles": "{__pycache__/**,**/*.pyc,*.csv,*.md,generate_*.py,train_*.py,test_*.py}"
+    },
+    "api/webhook.py": {
       "excludeFiles": "{__pycache__/**,**/*.pyc,*.csv,*.md,generate_*.py,train_*.py,test_*.py}"
     }
   }
