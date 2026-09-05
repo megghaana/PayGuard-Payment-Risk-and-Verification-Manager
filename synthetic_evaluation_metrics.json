@@ -1,8 +1,0 @@
-{
-  "rows": 50000,
-  "positive_rate": 0.05918,
-  "decision_threshold": 0.1914,
-  "precision": 0.3365,
-  "recall": 0.4747,
-  "average_precision": 0.3494
-}
