@@ -24,11 +24,21 @@ import hmac
 import json
 import logging
 import os
+import ctypes
 from dotenv import load_dotenv
 from collections import defaultdict, deque
 from datetime import datetime, timezone
 from typing import Any
+from pathlib import Path
 from pydantic import BaseModel
+
+import sys
+
+LIBGOMP_PATH = Path(__file__).resolve().parent / "lib" / "libgomp.so.1"
+
+if sys.platform == "linux" and LIBGOMP_PATH.exists():
+    ctypes.CDLL(str(LIBGOMP_PATH), mode=ctypes.RTLD_GLOBAL)
+
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
