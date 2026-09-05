@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+
+payguard_razorpay_risk_dataset.csv
+payguard_razorpay_synthetic_20000.csv
+payguard_razorpay_synthetic_v2.csv
+
+generate_risk_dataset.py
+generate_synthetic_dataset.py
+train_evaluate.py
+train_risk_model.py
+test_risk_explainability.py
+test_webhook.py
+
+ML_PIPELINE.md
+synthetic_evaluation_metrics.json
+payguard_risk_model_metrics.json
