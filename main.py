@@ -43,7 +43,7 @@ if sys.platform == "linux" and LIBGOMP_PATH.exists():
 
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from feature_extraction import extract_payment_features
 from risk_model import load_risk_model, load_model_schema
@@ -733,6 +733,10 @@ def analyze_payment(
 # -------------------------------------------------------------------
 
 latest_risk_result: dict[str, Any] | None = None
+
+@app.get("/")
+async def home():
+    return FileResponse("index.html")
 
 
 # -------------------------------------------------------------------

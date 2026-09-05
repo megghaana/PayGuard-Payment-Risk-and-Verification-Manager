@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayGuard</title>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f7fb;
+            margin: 0;
+            padding: 40px;
+            color: #1f2937;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: auto;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        }
+
+        .amount {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            background: #2563eb;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        .result {
+            display: none;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .risk {
+            font-weight: bold;
+        }
+
+        .signals {
+            margin-top: 20px;
+        }
+
+        .signal {
+            padding: 10px;
+            background: #f8fafc;
+            border-radius: 6px;
+            margin-top: 8px;
+        }
+
+        .loading {
+            text-align: center;
+            display: none;
+            margin-top: 15px;
+            color: #6b7280;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>🛡️ PayGuard</h1>
+    <div class="subtitle">
+        Payment Risk & Verification Manager
+    </div>
+
+    <div class="card">
+        <h2>Test Payment</h2>
+
+        <div class="amount">₹299</div>
+
+        <button onclick="startPayment()">
+            Pay with Razorpay
+        </button>
+
+        <div class="loading" id="loading">
+            Creating secure payment...
+        </div>
+    </div>
+
+    <div class="card result" id="result">
+
+        <h2>Payment Analysis</h2>
+
+        <div class="row">
+            <span>Payment Status</span>
+            <strong id="paymentStatus">Waiting...</strong>
+        </div>
+
+        <div class="row">
+            <span>Risk Score</span>
+            <strong id="riskScore">—</strong>
+        </div>
+
+        <div class="row">
+            <span>Risk Level</span>
+            <strong class="risk" id="riskLevel">—</strong>
+        </div>
+
+        <div class="row">
+            <span>Decision</span>
+            <strong id="decision">—</strong>
+        </div>
+
+        <div class="signals">
+            <h3>Risk Signals</h3>
+            <div id="signals"></div>
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+async function startPayment() {
+
+    const loading = document.getElementById("loading");
+    loading.style.display = "block";
+
+    try {
+
+        // Ask PayGuard backend to create Razorpay order
+        const response = await fetch("/api/create-order", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                amount_paise: 29900
+            })
+        });
+
+        const order = await response.json();
+
+        if (!response.ok) {
+            throw new Error(order.detail || "Could not create order");
+        }
+
+        loading.style.display = "none";
+
+        const options = {
+
+            key: order.key_id,
+
+            amount: order.amount,
+
+            currency: order.currency,
+
+            name: "PayGuard",
+
+            description: "PayGuard Test Transaction",
+
+            order_id: order.id,
+
+            handler: function(response) {
+
+                console.log("Payment completed:", response);
+
+                document.getElementById("result").style.display = "block";
+
+                document.getElementById("paymentStatus").innerText =
+                    "Payment submitted";
+
+                document.getElementById("riskScore").innerText =
+                    "Waiting for webhook...";
+
+                document.getElementById("riskLevel").innerText =
+                    "Analyzing";
+
+                document.getElementById("decision").innerText =
+                    "WAIT";
+
+                pollRisk();
+
+            }
+
+        };
+
+        const razorpay = new Razorpay(options);
+
+        razorpay.open();
+
+    } catch (error) {
+
+        loading.style.display = "none";
+
+        alert(error.message);
+
+    }
+}
+
+
+async function pollRisk() {
+
+    for (let i = 0; i < 15; i++) {
+
+        try {
+
+            const response = await fetch("/api/risk/latest");
+
+            if (response.ok) {
+
+                const data = await response.json();
+
+                if (data.risk_score !== undefined) {
+
+                    document.getElementById("paymentStatus").innerText =
+                        data.payment_status || "Captured";
+
+                    document.getElementById("riskScore").innerText =
+                        data.risk_score;
+
+                    document.getElementById("riskLevel").innerText =
+                        data.risk_level;
+
+                    document.getElementById("decision").innerText =
+                        data.recommendation;
+
+                    const signals = document.getElementById("signals");
+
+                    signals.innerHTML = "";
+
+                    if (data.risk_signals) {
+
+                        data.risk_signals.forEach(signal => {
+
+                            const div = document.createElement("div");
+
+                            div.className = "signal";
+
+                            div.innerText =
+                                signal.feature +
+                                " → " +
+                                signal.direction;
+
+                            signals.appendChild(div);
+
+                        });
+
+                    }
+
+                    return;
+                }
+            }
+
+        } catch (error) {
+            console.log(error);
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+}
+
+</script>
+
+</body>
+</html>
