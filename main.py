@@ -25,6 +25,8 @@ import json
 import logging
 import os
 import ctypes
+import time
+import razorpay
 from dotenv import load_dotenv
 from collections import defaultdict, deque
 from datetime import datetime, timezone
@@ -811,6 +813,9 @@ class ManualRiskRequest(BaseModel):
         }
     }
 
+class CreateOrderRequest(BaseModel):
+    amount_paise: int = 29900
+
 @app.post("/api/risk/analyze")
 async def manual_risk_analysis(
     request: ManualRiskRequest,
@@ -870,6 +875,51 @@ async def manual_risk_analysis(
             },
         )
 
+
+@app.post("/api/create-order")
+async def create_order(request: CreateOrderRequest) -> JSONResponse:
+    key_id = os.getenv("RAZORPAY_KEY_ID")
+    key_secret = os.getenv("RAZORPAY_KEY_SECRET")
+
+    if not key_id or not key_secret:
+        return JSONResponse(
+            {
+                "detail": "Razorpay API credentials are not configured"
+            },
+            status_code=500,
+        )
+
+    if request.amount_paise <= 0:
+        return JSONResponse(
+            {
+                "detail": "Amount must be greater than zero"
+            },
+            status_code=400,
+        )
+
+    client = razorpay.Client(
+        auth=(key_id, key_secret)
+    )
+
+    order = client.order.create(
+        data={
+            "amount": request.amount_paise,
+            "currency": "INR",
+            "receipt": f"payguard_{int(time.time())}",
+            "notes": {
+                "source": "payguard"
+            },
+        }
+    )
+
+    return JSONResponse(
+        {
+            "id": order["id"],
+            "amount": order["amount"],
+            "currency": order["currency"],
+            "key_id": key_id,
+        }
+    )
 
 # -------------------------------------------------------------------
 # RAZORPAY WEBHOOK
