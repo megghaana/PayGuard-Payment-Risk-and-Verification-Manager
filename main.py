@@ -58,6 +58,9 @@ load_dotenv()
 
 app = FastAPI(
     title="PayGuard - AI Risk Manager",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json",
     description="Razorpay payment verification and AI risk detection",
     version="1.0.0",
 )
