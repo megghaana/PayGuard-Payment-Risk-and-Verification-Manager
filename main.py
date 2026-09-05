@@ -28,6 +28,7 @@ from dotenv import load_dotenv
 from collections import defaultdict, deque
 from datetime import datetime, timezone
 from typing import Any
+from pydantic import BaseModel
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -761,45 +762,49 @@ async def latest_risk() -> JSONResponse:
 # Useful for Swagger/testing before connecting the frontend.
 # -------------------------------------------------------------------
 
+class ManualRiskRequest(BaseModel):
+    payment_status: str = "captured"
+    features: dict[str, Any]
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "payment_status": "captured",
+                "features": {
+                    "amount_paise": 10000,
+                    "amount_log1p": 9.2104,
+                    "payment_method": "card",
+                    "is_international": 0,
+                    "card_network": "mastercard",
+                    "card_type": "credit",
+                    "issuer": "hdfc",
+                    "card_sub_type": "consumer",
+                    "payment_hour_utc": 14,
+                    "payment_day_of_week": 5,
+                    "transactions_last_10min": 1,
+                    "transactions_last_1hr": 2,
+                    "failed_attempts_last_10min": 0,
+                    "failed_attempts_last_1hr": 0,
+                    "amount_vs_merchant_avg": 1.0,
+                    "amount_vs_merchant_max": 1.0,
+                    "new_device": 0,
+                    "new_ip": 0,
+                    "velocity_score": 0.1,
+                    "merchant_account_age_days": 365,
+                    "merchant_transactions_prior": 100,
+                    "is_night_utc": 0
+                }
+            }
+        }
+    }
+
 @app.post("/api/risk/analyze")
 async def manual_risk_analysis(
-    request: Request,
+    request: ManualRiskRequest,
 ) -> JSONResponse:
 
-    try:
-        body = await request.json()
-
-    except Exception:
-        return JSONResponse(
-            status_code=400,
-            content={
-                "status": "invalid_json"
-            },
-        )
-
-    if not isinstance(body, dict):
-        return JSONResponse(
-            status_code=400,
-            content={
-                "status": "invalid_request"
-            },
-        )
-
-    payment_status = body.get(
-        "payment_status",
-        "captured",
-    )
-
-    features = body.get("features")
-
-    if not isinstance(features, dict):
-        return JSONResponse(
-            status_code=400,
-            content={
-                "status": "invalid_request",
-                "message": "Request must contain a 'features' object.",
-            },
-        )
+    payment_status = request.payment_status
+    features = request.features
 
     try:
 
